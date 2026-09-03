@@ -1,17 +1,14 @@
-// MADE BY https://steamcommunity.com/profiles/76561198431345495
-// ORIGINAL ENGLISH https://steamcommunity.com/sharedfiles/filedetails/?id=3595280872 
-// ORIGINAL CHINESE https://steamcommunity.com/sharedfiles/filedetails/?id=3577533909
+// Copy beepclear.wav to your sound folder so you won't get annoyed.
+// This thing counts the jump only and not your bhop streak.
+// The counter will reset if you have touched the ground for more than 3 seconds.
 
-// THIS IS MODIFIED VERSION BY https://steamcommunity.com/profiles/76561198401438797/
-// Copy beepclear.wav to your sound folder so you won't get annoyed
-
-// ==========================================
-// Auto-configure cvars to suppress game clutter
-// ==========================================
 SendToConsole("gameinstructor_enable 1");
 SendToConsole("cl_autohelp 0");
 SendToConsole("locator_split_len 0");
 
+// ==========================================
+// Speed Tracker
+// ==========================================
 printl("<mt2> Bhop Tracker Script Loaded ------------------------------------")
 
 const FL_ONGROUND = 1;
