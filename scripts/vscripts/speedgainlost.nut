@@ -3,7 +3,7 @@
 // ORIGINAL CHINESE https://steamcommunity.com/sharedfiles/filedetails/?id=3577533909
 
 // THIS IS MODIFIED VERSION BY https://steamcommunity.com/profiles/76561198401438797/
-// COPY THE beepclear.wav to your sound folder so you won't get annoyed
+// Copy beepclear.wav to your sound folder so you won't get annoyed
 
 // ==========================================
 // Auto-configure cvars to suppress game clutter
