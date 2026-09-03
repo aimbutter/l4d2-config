@@ -12,17 +12,20 @@ SendToConsole("gameinstructor_enable 1");
 SendToConsole("cl_autohelp 0");
 SendToConsole("locator_split_len 0");
 
-printl("<mt2> Speed Tracker Script Loaded ------------------------------------")
+printl("<mt2> Bhop Tracker Script Loaded ------------------------------------")
 
 const FL_ONGROUND = 1;
 
 ::BhopVars <-
 {
     BunnyHopTimerEnabled = false,
-    LastLandingSpeed = array(32, 0.0), // Speed recorded on prior landing
+    LastLandingSpeed = array(32, 0.0), // Stores previous landing speed
+    TakeoffSpeed = array(32, 0.0),     // Stores speed when leaving ground on jump 1
+    HasLandedOnce = array(32, false),  // Tracks if jump 1 has already landed
+    JumpCount = array(32, 0),          // Jump streak counter
     WasOnGround = array(32, true),     // Ground state tracking
-    GroundTicks = array(32, 0),        // Ground-contact frame counter
-    MaxGroundTicks = 3,                // Max frames touching ground before resetting streak
+    GroundTicks = array(32, 0),        // Ground contact frames
+    MaxGroundTicks = 3,                // Max frames on ground before streak resets
     playerHints = {}                   
 }
 
@@ -118,29 +121,46 @@ const FL_ONGROUND = 1;
             local flags = NetProps.GetPropInt(player, "m_fFlags");
             local isOnGround = (flags & FL_ONGROUND) != 0;
             local wasOnGround = ::BhopVars.WasOnGround[index];
+            local currentSpeed = ::BhopFunc.GetHorizontalSpeed(player);
 
-            // Landing Transition: Air -> Ground
-            if (!wasOnGround && isOnGround)
+            // Takeoff: Ground -> Air
+            if (wasOnGround && !isOnGround)
             {
-                local currentLandingSpeed = ::BhopFunc.GetHorizontalSpeed(player);
-                local prevLandingSpeed = ::BhopVars.LastLandingSpeed[index];
-
-                // Displays starting from the 2nd jump landing onward
-                if (prevLandingSpeed > 0.0)
+                if (!::BhopVars.HasLandedOnce[index])
                 {
-                    local delta = currentLandingSpeed - prevLandingSpeed;
-                    local sign = (delta >= 0.0) ? "+" : "";
-                    local message = "Vel: " + ::BhopFunc.FormatFloat(currentLandingSpeed) + 
-                                    " | Gain: " + sign + ::BhopFunc.FormatFloat(delta);
+                    ::BhopVars.TakeoffSpeed[index] = currentSpeed;
+                }
+            }
+            // Landing: Air -> Ground
+            else if (!wasOnGround && isOnGround)
+            {
+                local delta = 0.0;
+                ::BhopVars.JumpCount[index]++;
 
-                    // Green + icon_arrow_up on Gain | Red + icon_alert on Loss
-                    local hintColor = (delta >= 0.0) ? "0 255 120" : "255 80 80";
-                    local hintIcon  = (delta >= 0.0) ? "icon_arrow_up" : "icon_alert";
-
-                    ::BhopFunc.ShowHintText(player, message, hintIcon, hintColor);
+                if (!::BhopVars.HasLandedOnce[index])
+                {
+                    // Jump 1: Compare landing speed against takeoff speed
+                    delta = currentSpeed - ::BhopVars.TakeoffSpeed[index];
+                    ::BhopVars.HasLandedOnce[index] = true;
+                }
+                else
+                {
+                    // Jump 2+: Compare landing speed against previous landing speed
+                    delta = currentSpeed - ::BhopVars.LastLandingSpeed[index];
                 }
 
-                ::BhopVars.LastLandingSpeed[index] = currentLandingSpeed;
+                local sign = (delta >= 0.0) ? "+" : "";
+                local message = "Jump: " + ::BhopVars.JumpCount[index] + 
+                                " | Vel: " + ::BhopFunc.FormatFloat(currentSpeed) + 
+                                " | Gain: " + sign + ::BhopFunc.FormatFloat(delta);
+
+                // Green + icon_arrow_up on Gain | Red + icon_alert on Loss
+                local hintColor = (delta >= 0.0) ? "0 255 120" : "255 80 80";
+                local hintIcon  = (delta >= 0.0) ? "icon_arrow_up" : "icon_alert";
+
+                ::BhopFunc.ShowHintText(player, message, hintIcon, hintColor);
+
+                ::BhopVars.LastLandingSpeed[index] = currentSpeed;
                 ::BhopVars.GroundTicks[index] = 0;
             }
             else if (isOnGround)
@@ -151,6 +171,9 @@ const FL_ONGROUND = 1;
                 if (::BhopVars.GroundTicks[index] > ::BhopVars.MaxGroundTicks)
                 {
                     ::BhopVars.LastLandingSpeed[index] = 0.0;
+                    ::BhopVars.TakeoffSpeed[index] = 0.0;
+                    ::BhopVars.HasLandedOnce[index] = false;
+                    ::BhopVars.JumpCount[index] = 0;
                 }
             }
 
@@ -181,6 +204,9 @@ const FL_ONGROUND = 1;
             }
 
             ::BhopVars.LastLandingSpeed[index] = 0.0;
+            ::BhopVars.TakeoffSpeed[index] = 0.0;
+            ::BhopVars.HasLandedOnce[index] = false;
+            ::BhopVars.JumpCount[index] = 0;
             ::BhopVars.GroundTicks[index] = 0;
             ::BhopVars.WasOnGround[index] = true;
         }
